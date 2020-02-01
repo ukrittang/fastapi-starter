@@ -3,10 +3,10 @@ from pydantic import BaseModel
 
 # Shared properties
 class ItemBase(BaseModel):
-    title: str
-    description: str
-    category_id: int
-    location_id: int
+    title: str = None
+    description: str = None
+    category_id: int = None
+    location_id: int = None
 
 
 # Properties to receive on item creation
