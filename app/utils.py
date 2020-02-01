@@ -1,4 +1,5 @@
 import logging
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -13,7 +14,7 @@ from app.core import config
 password_reset_jwt_subject = "preset"
 
 
-def send_email(email_to: str, subject_template="", html_template="", environment=None):
+def emailer(email_to: str, subject_template="", html_template="", environment=None):
     if environment is None:
         environment = {}
     assert config.EMAILS_ENABLED, "no provided configuration for email variables"
@@ -31,6 +32,29 @@ def send_email(email_to: str, subject_template="", html_template="", environment
         smtp_options["password"] = config.SMTP_PASSWORD
     response = message.send(to=email_to, render=environment, smtp=smtp_options)
     logging.info(f"send email result: {response}")
+
+
+class EmailThread(threading.Thread):
+    def __init__(self, email_to: str, subject_template="", html_template="", environment=None):
+        if environment is None:
+            environment = {}
+        self.email_to = email_to
+        self.subject_template = subject_template
+        self.html_template = html_template
+        self.environment = environment
+        threading.Thread.__init__(self)
+
+    def run(self):
+        emailer(
+            email_to=self.email_to,
+            subject_template=self.subject_template,
+            html_template=self.html_template,
+            environment=self.environment,
+        )
+
+
+def send_email(email_to: str, subject_template="", html_template="", environment=None):
+    EmailThread(email_to, subject_template, html_template, environment).start()
 
 
 def send_test_email(email_to: str):
